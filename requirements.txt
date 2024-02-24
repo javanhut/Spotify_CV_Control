@@ -1,0 +1,9 @@
+black
+flake8
+os
+cv2
+flask
+spotipy
+python-dotenv
+functools
+cvzone
