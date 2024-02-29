@@ -1,6 +1,5 @@
 from cvzone.HandTrackingModule import HandDetector
 import cv2 as cv
-from functools import partial
 import time
 
 
