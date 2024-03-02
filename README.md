@@ -17,13 +17,17 @@ When using available devices for gesture control change device select correct de
 # Gestures:
 ## Right hand:
 Index and middle finger up with other fingers down:
+
 Swipe right - next song
+
 Swipe left - previous song
 
 open hand:
 Volume control 0-100 depending on hand height (* no depth estimation yet so decent control for now)
 
 # Left Hand:
-Opem Hand: Play
+
+Open Hand: Play
+
 Closed Hand: Stop
  
