@@ -2,7 +2,6 @@ from cvzone.HandTrackingModule import HandDetector
 import cv2 as cv
 import time
 
-
 class GestureControl:
     def __init__(self, gesture_callback=None):
         self.cap_vid = cv.VideoCapture(0)

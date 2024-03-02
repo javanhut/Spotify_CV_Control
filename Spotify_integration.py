@@ -1,4 +1,6 @@
+import base64
 import os
+import requests
 from flask import Flask, redirect, request, url_for, session
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -25,7 +27,7 @@ def login():
     return redirect(auth_url)
 
 
-@app.route('/redirect')
+@app.route('/redirect_page')
 def redirect_page():
     spotify_oauth = create_spotify_oauth()
     session.clear()
@@ -34,10 +36,11 @@ def redirect_page():
     session[TOKEN_INFO] = token_info
     return redirect(url_for("run_gesture_control", _external=True))
 
+
 def get_token():
     token_info = session.get(TOKEN_INFO, None)
     if not token_info:
-        raise(TokenInfoNotFound("Could retrieve token data."))
+        raise (TokenInfoNotFound("Could retrieve token data."))
     now = int(time.time())
     is_expired = token_info['expires_at'] - now < 60
     if is_expired:
@@ -45,30 +48,61 @@ def get_token():
         token_info = spotify_oauth.refresh_access_token(token_info['refresh_token'])
     return token_info
 
+
 @app.route('/app_run')
 def run_gesture_control():
     try:
         token_info = get_token()
     except TokenInfoNotFound:
         print("User info not found")
-        redirect(url_for('login',_external=False))
+        redirect(url_for('login', _external=False))
     token = token_info['access_token']
-    sp = spotipy.Spotify(auth=token)
+    spotify_oauth = create_spotify_oauth()
+    sp = spotipy.Spotify(auth_manager=spotify_oauth, auth=token)
     gesture_action_callback = partial(gesture_action_handler, token=token)
     gc = GestureControl(gesture_callback=gesture_action_callback)
     gc.run_hands(token=token)
     return "Run gesture control App"
 
 
+def set_spotify_volume(access_token, volume_percent, device_id=None):
+    """
+    Set the volume for the user's current playback device.
+
+    Parameters:
+    - access_token (str): Spotify OAuth access token.
+    - volume_percent (int): Volume level to set (0-100).
+    - device_id (str, optional): The id of the device this command is targeting. If not supplied, the user's currently active device is the target.
+    """
+    # Endpoint for setting volume
+    endpoint = "https://api.spotify.com/v1/me/player/volume"
+
+    # Parameters
+    params = {
+        "volume_percent": volume_percent,
+    }
+    if device_id:
+        params["device_id"] = device_id
+
+    # Headers
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    # Sending the PUT request to Spotify
+    response = requests.put(endpoint, headers=headers, params=params)
+
+    # Check if the request was successful
+    if response.status_code == 204:
+        print("Volume set successfully.")
+    else:
+        print(f"Failed to set volume. Status code: {response.status_code}, Message: {response.text}")
+
+
 def create_spotify_oauth():
     return SpotifyOAuth(client_id=client_id, client_secret=client_secret,
                         redirect_uri=url_for('redirect_page', _external=True), scope=scope)
-    # Code to run gesture control in app
-    # gesture_action_callback = partial(gesture_action_handler, token=token_info["access_token"])
-    # gc = GestureControl(gesture_callback=gesture_action_callback)
-    # gc.run_hands()
-
-
 def gesture_action_handler(
         gesture: str,
         hand: dict,
@@ -77,6 +111,7 @@ def gesture_action_handler(
         volume_level: int = None,
         enable_info: bool = False,
 ) -> None:
+    spotify_oauth = create_spotify_oauth()
     sp = spotipy.Spotify(auth=token)
     devices = sp.devices()
     device_id = devices["devices"][0]["id"]
@@ -89,8 +124,9 @@ def gesture_action_handler(
     elif gesture == "Play":
         sp.start_playback(device_id=device_id)
     elif volume_level is not None:
-        sp.volume(volume_percent=int(volume_level), device_id=device_id)
-
+        set_spotify_volume(access_token=token, volume_percent=int(volume_level), device_id=device_id)
 
 if __name__ == "__main__":
     app.run(debug=True)
+    print(client_id)
+    print(client_secret)
