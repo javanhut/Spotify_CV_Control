@@ -1,8 +1,6 @@
 from cvzone.HandTrackingModule import HandDetector
 import cv2 as cv
-from functools import partial
 import time
-
 
 class GestureControl:
     def __init__(self, gesture_callback=None):

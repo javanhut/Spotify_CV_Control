@@ -1,9 +1,7 @@
 black
 flake8
-os
-cv2
-flask
+opencv-python
 spotipy
 python-dotenv
-functools
 cvzone
+Flask
