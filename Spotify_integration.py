@@ -14,11 +14,10 @@ load_dotenv()
 app = Flask(__name__)
 app.config["SESSION_COOKIE_NAME"] = "spotify control cookie"
 app.secret_key = "sfnuvniwnoido5793402uj&*%^TGT&"
-scope = "user-modify-playback-state user-read-playback-state app-remote-control user-read-currently-playing"
+scope = "user-modify-playback-state user-read-playback-state app-remote-control user-read-currently-playing streaming"
 TOKEN_INFO = "token_info"
 client_id = os.getenv('client_id')
 client_secret = os.getenv('client_secret')
-
 
 @app.route('/')
 def login():
@@ -89,9 +88,10 @@ def set_spotify_volume(access_token, volume_percent, device_id=None):
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
     }
+    data = {"grant_type": "client_credentials"}
 
     # Sending the PUT request to Spotify
-    response = requests.put(endpoint, headers=headers, params=params)
+    response = requests.put(endpoint,data=data, headers=headers, params=params)
 
     # Check if the request was successful
     if response.status_code == 204:
@@ -114,7 +114,7 @@ def gesture_action_handler(
     spotify_oauth = create_spotify_oauth()
     sp = spotipy.Spotify(auth=token)
     devices = sp.devices()
-    device_id = devices["devices"][0]["id"]
+    device_id = devices["devices"][1]["id"]
     if gesture == "Swipe Right":
         sp.next_track(device_id=device_id)
     elif gesture == "Swipe Left":
@@ -124,7 +124,8 @@ def gesture_action_handler(
     elif gesture == "Play":
         sp.start_playback(device_id=device_id)
     elif volume_level is not None:
-        set_spotify_volume(access_token=token, volume_percent=int(volume_level), device_id=device_id)
+        # set_spotify_volume(access_token=token, volume_percent=int(volume_level), device_id=device_id)
+        sp.volume(volume_percent=int(volume_level), device_id=device_id)
 
 if __name__ == "__main__":
     app.run(debug=True)
